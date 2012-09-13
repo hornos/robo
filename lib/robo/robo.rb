@@ -27,27 +27,40 @@ module Robo
       Robo::stop(c) if action.to_s == "stop"
       binding.pry if action.to_s == "pry"
 
+      # open a new window
+      if opts.has_key?(:new)
+
+      # switch to window with the title
       if opts.has_key?(:use)
         win=br.windows.find{|w| w.title =~ /#{opts[:use]}/}
         win.use
         puts "#{action} use #{win.inspect}"
       end
 
+      # navigate to this url
       if opts.has_key?(:goto)
         br.goto opts[:goto]
         puts "#{action} goto #{opts[:goto]}"
       end
 
+      # main page timeout
       opts[:timeout].each do |xpath,opts|
         puts "#{action} wait #{xpath}"
-        br.wait_until{br.element(:xpath,xpath.to_s).exists?}
+        begin
+          br.wait_until{br.element(:xpath,xpath.to_s).exists?}
+        rescue Exception => ex
+          STDERR.puts ex.inspect
+          pry
+        end
       end if opts.has_key?(:timeout)
 
+      # same by assert
       opts[:assert].each do |xpath,opts|
         puts "#{action} assert #{xpath}"
         assert(br.element(:xpath,xpath.to_s).exists?)
       end if opts.has_key?(:assert)
 
+      # xpath data
       opts[:xpath].each do |xpath,cmds|
         elem = br.element(:xpath=>xpath.to_s).to_subtype
         puts "#{action} type => #{elem.inspect}"
@@ -63,23 +76,22 @@ module Robo
         end
       end if opts.has_key?(:xpath)
 
+      # element data
       opts[:elem].each do |elem,cmds|
-        puts "#{elem} #{cmds}"
         path = cmds.shift
         cmd  = cmds.shift
-        puts "#{path} #{cmd}"
-        # a=br.link(:href,/en.gravatar.com/)
+        puts "#{action} #{elem} => #{path} => #{cmd}"
         try = 0
         begin
           try += 1
           e = br.send elem,path[0],/#{path[1]}/
           puts e.inspect
           c,v = cmd
-          puts "#{c} #{v}"
+          # puts "#{c} #{v}"
           e.when_present(3).send c,v
         rescue Exception => ex
           retry if try < 3
-          STDERR.puts "#{ex.inspect}"
+          STDERR.puts ex.inspect
           binding.pry
         end
       end if opts.has_key?(:elem)
