@@ -34,8 +34,17 @@ command :run do |c|
     # puts @config.inspect
     Robo::stop if @config[:robo].nil?
     Robo::start(@config[:robo])
+    Robo::jsproper(@config[:robo])
     Robo::actions(@config[:robo])
     # Robo::stop(@config[:robo],0)
+  end
+end
+
+desc 'list'
+arg_name ''
+command :list do |c|
+  c.action do |global_options,options,args|
+    Robo::list(@config[:robo]) if not @config[:robo].nil?
   end
 end
 

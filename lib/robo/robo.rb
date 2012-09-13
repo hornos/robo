@@ -14,21 +14,45 @@ module Robo
     # end
   end
 
+  def Robo.list(c)
+    return if c[:actions].empty?
+    c[:actions].each do |action,opts|
+      puts action.to_s
+    end
+  end
+
+  def Robo.jsproper(c)
+    c[:browser].execute_script("window.alert = function() {}")
+    # c[:browser].execute_script("window.prompt = function() {return 'jsproper'}")
+    c[:browser].execute_script("window.prompt = function() {return null}")
+    c[:browser].execute_script("window.confirm = function() {return true}")
+    c[:browser].execute_script("window.confirm = function() {return false}")
+    c[:browser].execute_script("window.onbeforeunload = null")
+  end
+
   def Robo.actions(c)
     return if c[:actions].empty?
+    return if c[:args].empty?
 
-    c[:actions].keep_if do |action|
-      c[:args].include? action.to_s
-    end if not c[:args].empty?
-
+    # c[:actions].keep_if do |action|
+    #   c[:args].include? action.to_s
+    # end if not c[:args].empty?
 
     br = c[:browser]
-    c[:actions].each do |action,opts|
+
+#    c[:actions].each do |action,opts|
+    c[:args].each do |act|
+      action = act.to_sym
+      if not c[:actions].has_key?(action) then
+        puts "action not found #{act}"
+        next
+      end
+      opts = c[:actions][action]
       Robo::stop(c) if action.to_s == "stop"
       binding.pry if action.to_s == "pry"
 
       # open a new window
-      if opts.has_key?(:new)
+      # if opts.has_key?(:new)
 
       # switch to window with the title
       if opts.has_key?(:use)
@@ -67,11 +91,18 @@ module Robo
 
         cmds.each do |cmd,val|
           puts "#{action} #{cmd} => #{val}"
-          case
-          when cmd.to_s == "flash"
-            val.times {elem.flash}
-          else
-            elem.when_present.send cmd,val
+          begin
+            case
+            when cmd.to_s == "flash"
+              val.times {elem.flash}
+            when cmd.to_s == "wait"
+              br.wait_until{br.element(:xpath,xpath.to_s).exists?}
+            else
+              elem.when_present.send cmd,val
+            end
+          rescue Exception => ex
+            STDERR.puts ex
+            pry
           end
         end
       end if opts.has_key?(:xpath)
