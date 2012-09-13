@@ -1,0 +1,6 @@
+= robo
+
+Describe your project here
+
+:include:robo.rdoc
+

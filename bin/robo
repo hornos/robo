@@ -1,0 +1,70 @@
+#!/usr/bin/env ruby
+require 'gli'
+begin # XXX: Remove this begin/rescue before distributing your app
+require 'robo'
+rescue LoadError
+  STDERR.puts "In development, you need to use `bundle exec bin/todo` to run your app"
+  STDERR.puts "At install-time, RubyGems will make sure lib, etc. are in the load path"
+  STDERR.puts "Feel free to remove this message from bin/todo now"
+  exit 64
+end
+
+include GLI::App
+
+program_desc 'Describe your application here'
+
+version Robo::VERSION
+
+# desc 'Describe some switch here'
+# switch [:s,:switch]
+
+desc 'config'
+default_value 'robo.yml'
+arg_name 'The name of the argument'
+flag [:c,:config]
+
+desc 'run'
+arg_name ''
+command :run do |c|
+  c.action do |global_options,options,args|
+    puts "Global:  #{global_options.inspect}"
+    puts "Options: #{options.inspect}"
+    puts "Args:    #{args.inspect}"
+    @config[:robo][:args] = args
+    # puts @config.inspect
+    Robo::stop if @config[:robo].nil?
+    Robo::start(@config[:robo])
+    Robo::actions(@config[:robo])
+    # Robo::stop(@config[:robo],0)
+  end
+end
+
+
+pre do |global,command,options,args|
+  begin
+    @config = YAML.load(ERB.new(File.read(global[:config])).result)
+    # @config = YAML.load_file global[:config]
+  rescue Exception => e
+    STDERR.puts "pre #{e.message}"
+    Robo::stop(nil,1)
+  end
+end
+
+
+post do |global,command,options,args|
+  # Post logic here
+  # Use skips_post before a command to skip this
+  # block on that command only
+end
+
+
+on_error do |exception|
+  # Error logic here
+  # return false to skip default error handling
+  # puts exception.backtrace
+  # binding.pry
+  true
+  # false
+end
+
+exit run(ARGV)
