@@ -41,16 +41,21 @@ module Robo
     br = c[:browser]
 
 #    c[:actions].each do |action,opts|
+    puts c[:actions].keys
     c[:args].each do |act|
-      action = act.to_sym
-      if not c[:actions].has_key?(action) then
-        puts "action not found #{act}"
-        next
+      begin
+        action = act.to_sym
+        if not c[:actions].has_key?(action) then
+          puts "action not found #{act}"
+          next
+        end
+        opts = c[:actions][action]
+        Robo::stop(c) if action.to_s == "stop"
+        binding.pry if action.to_s == "pry"
+      rescue Exception => ex
+        STDERR.puts ex.backtrace
+        binding.pry
       end
-      opts = c[:actions][action]
-      Robo::stop(c) if action.to_s == "stop"
-      binding.pry if action.to_s == "pry"
-
       # open a new window
       # if opts.has_key?(:new)
 
@@ -102,7 +107,7 @@ module Robo
             end
           rescue Exception => ex
             STDERR.puts ex
-            pry
+            binding.pry
           end
         end
       end if opts.has_key?(:xpath)
@@ -115,11 +120,10 @@ module Robo
         try = 0
         begin
           try += 1
-          e = br.send elem,path[0],/#{path[1]}/
-          puts e.inspect
-          c,v = cmd
-          # puts "#{c} #{v}"
-          e.when_present(3).send c,v
+          _elem = br.send elem,path[0],/#{path[1]}/
+          puts _elem.inspect
+          _cmd,_val = cmd
+          _elem.when_present(3).send _cmd,_val
         rescue Exception => ex
           retry if try < 3
           STDERR.puts ex.inspect

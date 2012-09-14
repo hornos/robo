@@ -70,8 +70,8 @@ end
 on_error do |exception|
   # Error logic here
   # return false to skip default error handling
-  # puts exception.backtrace
-  # binding.pry
+  puts exception.backtrace
+  binding.pry
   true
   # false
 end
