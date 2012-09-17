@@ -14,10 +14,20 @@ module Robo
     # end
   end
 
-  def Robo.list(c)
-    return if c[:actions].empty?
-    c[:actions].each do |action,opts|
-      puts action.to_s
+  def Robo.list(c,a=nil)
+    case
+    when a[0].nil?
+      puts "actions:"
+      c[:actions].each do |action,opts|
+        puts action.to_s
+      end if not c[:actions].empty?
+    when c.has_key?(a[0].to_sym)
+      puts "#{a[0].to_s}:"
+      c[a[0].to_sym].each do |action,opts|
+        puts "#{action.to_s} - #{opts[:info]}"
+        puts "  #{opts[:actions]}"
+        # puts action.to_s
+      end if not c[a[0].to_sym].empty?
     end
   end
 
@@ -39,10 +49,17 @@ module Robo
     # end if not c[:args].empty?
 
     br = c[:browser]
+    actions = c[:args].dup
+
+    if c[:args].shift == "task"
+      task = c[:args].shift || 'default'
+      actions = c[:tasks][task.to_sym][:actions] if c[:tasks][task.to_sym].has_key?(:actions)
+    end
 
 #    c[:actions].each do |action,opts|
-    puts c[:actions].keys
-    c[:args].each do |act|
+#    puts c[:actions].keys
+#    c[:args].each do |act|
+    actions.each do |act|
       begin
         action = act.to_sym
         if not c[:actions].has_key?(action) then
