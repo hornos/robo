@@ -1,6 +1,8 @@
 = robo
 
-Describe your project here
+Watir automator
+
+check examples
 
 :include:robo.rdoc
 

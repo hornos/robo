@@ -1,0 +1,209 @@
+# web registrator example
+# global namespace :robo
+:robo:
+  :driver:
+    # firefox
+    :browser: ff
+    # http proxy
+    # :proxy: localhost:3128
+  # end driver
+
+  # task groups
+  :tasks:
+    # check ip
+    :ifconfig:
+      :in: ifconfig.me
+      :actions:
+        - ifconfig
+
+    # register a mail
+    :mail:
+      :info: mail
+      # actions to perform (pages to fill)
+      :actions:
+        - mail_reg0
+        - mail_reg1
+        - mail_login
+        - mail_logout
+
+    # register a gravatar
+    :gravatar:
+      :info: gravatar
+      :actions:
+        - grav_reg
+        - wait
+        - mail_login
+        - mail_inbox
+        - mail_last
+        - grav_mail_act
+        - grav_finish
+        - grav_image
+        - grav_close
+
+    # task for both
+    :credential:
+      :info: user
+      :actions:
+        - mail_reg0
+        - mail_reg1
+        - mail_login
+        - mail_logout
+        - grav_reg
+        - wait
+        - mail_login
+        - mail_inbox
+        - mail_last
+        - grav_mail_act
+        - grav_finish
+        - grav_image
+        - grav_close
+        - stop
+  # end tasks
+
+  # basic actions
+  :actions:
+    # sec
+    :wait: 20
+
+    :ifconfig:
+      :goto: http://ifconfig.me
+
+    :mail_reg0:
+      :goto: http://webmail
+      :xpath:
+        # xpath for the register button
+        :XPATH:
+          # mouse action
+          :click:
+
+    :mail_reg1:
+      # timeout for the next page
+      :timeout:
+        :XPATH:
+          - 1200
+      # fill the form by xpath
+      :xpath:
+        # text fileds
+        ://*[@id="nick"]:
+          :set: nick
+
+        ://*[@id="passwd"]:
+          :set: pass
+
+        # combo
+        ://*[@id="gender"]:
+          :select_value: <%= Random.rand(1..2) %>
+
+    :mail_login:
+      :goto: http://webmail
+
+      :timeout:
+        :XPATH:
+          - 1200
+      :xpath:
+        ://*[@id="user"]:
+          :set: email
+        ://*[@id="passwd"]:
+          :set: pass
+        # login button
+        :XPATH:
+          :click:
+
+    :mail_logout:
+      :xpath:
+        # logout button
+        :XPATH:
+          :click:
+
+
+    :mail_inbox:
+      :timeout:
+        # inbox button
+        :XPATH:
+          - 1200
+      :xpath:
+        :XPATH:
+          :click:
+
+    :mail_last:
+      :xpath:
+        # most recent mail row
+        :XPATH:
+          :click:
+
+    :grav_mail_act:
+      # title for the mailbox window
+      :use: MAILTITLE
+      :elem:
+        :link:
+          :href: en.gravatar.com
+          :click:
+
+    :grav_reg:
+      :goto: https://en.gravatar.com/site/signup
+      :timeout:
+        ://*[@id="email_address"]:
+          - 1200
+      :xpath:
+        ://*[@id="email_address"]:
+          :set: email
+        :/html/body/div/div[2]/div/div[2]/div/form/p[2]/input:
+          :click:
+        :/html/body/div/div[2]/div/div[2]/div/p/em/strong:
+          :wait:
+
+    :grav_finish:
+      :use: Gravatar
+      :timeout:
+        ://*[@id="checkbutton"]:
+          - 1200
+      :xpath:
+        ://*[@id="setusername"]:
+          :set: user
+        ://*[@id="pass1"]:
+          :set: pass
+        ://*[@id="pass2"]:
+          :set: pass
+        ://*[@id="terms"]:
+          :set: ok
+        ://*[@id="submit"]:
+          :click:
+
+    :grav_login:
+      :use: Gravatar
+      :goto: https://en.gravatar.com/site/login/
+
+      :timeout:
+        :/html/body/div/div[2]/div/div[2]/div/form/p[3]/input:
+          - 1200
+      :xpath:
+        ://*[@id="email_address"]:
+          :set: email
+        ://*[@id="account_password"]:
+          :set: pass
+        :/html/body/div/div[2]/div/div[2]/div/form/p[3]/input:
+          :click:
+
+    :grav_image:
+      :goto: https://en.gravatar.com/gravatars/new/url
+      :timeout:
+        :/html/body/div/div[2]/div/div[2]/div/form/p[2]/input:
+          - 1200
+      :xpath:
+        ://*[@id="gravatar_url"]:
+          :set: IMAGEURL
+        :/html/body/div/div[2]/div/div[2]/div/form/p[2]/input:
+          :click:
+        # save
+        :/html/body/div/div[2]/div/div[2]/div/div/div/div/table/tbody/tr[3]/td/input:
+          :click:
+        # rate
+        ://*[@id="ratedg"]:
+          :click:
+
+    :grav_close:
+      :close: Gravatar
+
+    :pry:
+
+    :stop:

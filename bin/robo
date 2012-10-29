@@ -1,17 +1,17 @@
 #!/usr/bin/env ruby
 require 'gli'
-begin # XXX: Remove this begin/rescue before distributing your app
+#begin # XXX: Remove this begin/rescue before distributing your app
 require 'robo'
-rescue LoadError
-  STDERR.puts "In development, you need to use `bundle exec bin/todo` to run your app"
-  STDERR.puts "At install-time, RubyGems will make sure lib, etc. are in the load path"
-  STDERR.puts "Feel free to remove this message from bin/todo now"
-  exit 64
-end
+#rescue LoadError
+#  STDERR.puts "In development, you need to use `bundle exec bin/todo` to run your app"
+#  STDERR.puts "At install-time, RubyGems will make sure lib, etc. are in the load path"
+#  STDERR.puts "Feel free to remove this message from bin/todo now"
+#  exit 64
+#end
 
 include GLI::App
 
-program_desc 'Describe your application here'
+program_desc 'Watir automator'
 
 version Robo::VERSION
 
@@ -27,16 +27,11 @@ desc 'run'
 arg_name ''
 command :run do |c|
   c.action do |global_options,options,args|
-    puts "Global:  #{global_options.inspect}"
-    puts "Options: #{options.inspect}"
-    puts "Args:    #{args.inspect}"
     @config[:robo][:args] = args
-    # puts @config.inspect
     Robo::stop if @config[:robo].nil?
     Robo::start(@config[:robo])
     Robo::jsproper(@config[:robo])
     Robo::actions(@config[:robo])
-    # Robo::stop(@config[:robo],0)
   end
 end
 
@@ -71,9 +66,10 @@ end
 on_error do |exception|
   # Error logic here
   # return false to skip default error handling
-  puts exception.backtrace
+  # puts exception.backtrace
   # binding.pry
-  true
+  # true
+  false
   # false
 end
 

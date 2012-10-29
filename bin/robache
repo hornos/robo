@@ -1,0 +1,15 @@
+#!/bin/bash
+
+_gdn=$(dirname ${BASH_SOURCE})
+_bn=$(basename ${BASH_SOURCE})
+_cmd=${1:-init}
+_yml="robo.yml"
+
+case "${_cmd}" in
+  init)
+    echo "Generating ${_yml}"
+    ${_gdn}/${_bn}.rb > ${_yml}
+  ;;
+esac
+
+

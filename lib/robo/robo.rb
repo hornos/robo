@@ -3,15 +3,17 @@ module Robo
   def Robo.stop(c=nil,e=1)
     c[:browser].close if not c.nil?
     puts "STOP"
-    exit(e)
+    exit
   end
 
   def Robo.start(c)
-    # puts c[:driver]
-    c[:browser] = Watir::Browser.new c[:driver][:browser]
-    # c[:driver][:options].each do |b|
-    #   c[:browser].send(b.to_sym)
-    # end
+    if not c[:driver][:proxy].nil?
+      profile = Selenium::WebDriver::Firefox::Profile.new
+      profile.proxy = Selenium::WebDriver::Proxy.new :http => c[:driver][:proxy], :ssl => c[:driver][:proxy]
+      c[:browser] = Watir::Browser.new c[:driver][:browser],:profile=>profile
+    else
+      c[:browser] = Watir::Browser.new c[:driver][:browser]
+    end
   end
 
   def Robo.list(c,a=nil)
@@ -21,19 +23,18 @@ module Robo
       c[:actions].each do |action,opts|
         puts action.to_s
       end if not c[:actions].empty?
+
     when c.has_key?(a[0].to_sym)
       puts "#{a[0].to_s}:"
       c[a[0].to_sym].each do |action,opts|
         puts "#{action.to_s} - #{opts[:info]}"
         puts "  #{opts[:actions]}"
-        # puts action.to_s
       end if not c[a[0].to_sym].empty?
     end
   end
 
   def Robo.jsproper(c)
     c[:browser].execute_script("window.alert = function() {}")
-    # c[:browser].execute_script("window.prompt = function() {return 'jsproper'}")
     c[:browser].execute_script("window.prompt = function() {return null}")
     c[:browser].execute_script("window.confirm = function() {return true}")
     c[:browser].execute_script("window.confirm = function() {return false}")
@@ -44,69 +45,61 @@ module Robo
     return if c[:actions].empty?
     return if c[:args].empty?
 
-    # c[:actions].keep_if do |action|
-    #   c[:args].include? action.to_s
-    # end if not c[:args].empty?
-
     br = c[:browser]
     actions = c[:args].dup
 
     if c[:args].shift == "task"
       task = c[:args].shift || 'default'
-      actions = c[:tasks][task.to_sym][:actions] if c[:tasks][task.to_sym].has_key?(:actions)
+      actions = c[:tasks][task.to_sym][:actions]
     end
 
-#    c[:actions].each do |action,opts|
-#    puts c[:actions].keys
-#    c[:args].each do |act|
     actions.each do |act|
-      begin
-        action = act.to_sym
-        if not c[:actions].has_key?(action) then
-          puts "action not found #{act}"
-          next
-        end
-        opts = c[:actions][action]
-        Robo::stop(c) if action.to_s == "stop"
-        binding.pry if action.to_s == "pry"
-      rescue Exception => ex
-        STDERR.puts ex.backtrace
-        binding.pry
-      end
-      # open a new window
-      # if opts.has_key?(:new)
+      action = act.to_sym
+      opts = c[:actions][action]
+      case action.to_s
+      when "stop"
+        Robo::stop(c)
 
-      # switch to window with the title
+      when "pry"
+        binding.pry
+
+      when "wait"
+        puts "#{action} #{opts}"
+        sleep(opts)
+        next
+      end
+
+      # window switch
       if opts.has_key?(:use)
-        win=br.windows.find{|w| w.title =~ /#{opts[:use]}/}
+        win = br.windows.find{ |w| w.title =~ /#{opts[:use]}/ }
         win.use
         puts "#{action} use #{win.inspect}"
       end
 
-      # navigate to this url
+      # url goto
       if opts.has_key?(:goto)
         br.goto opts[:goto]
         puts "#{action} goto #{opts[:goto]}"
       end
 
-      # main page timeout
+      # page timeout
       opts[:timeout].each do |xpath,opts|
         puts "#{action} wait #{xpath}"
         begin
           br.wait_until{br.element(:xpath,xpath.to_s).exists?}
         rescue Exception => ex
           STDERR.puts ex.inspect
-          pry
+          binding.pry
         end
       end if opts.has_key?(:timeout)
 
-      # same by assert
+      # assert
       opts[:assert].each do |xpath,opts|
         puts "#{action} assert #{xpath}"
         assert(br.element(:xpath,xpath.to_s).exists?)
       end if opts.has_key?(:assert)
 
-      # xpath data
+      # process xpath
       opts[:xpath].each do |xpath,cmds|
         elem = br.element(:xpath=>xpath.to_s).to_subtype
         puts "#{action} type => #{elem.inspect}"
@@ -114,11 +107,13 @@ module Robo
         cmds.each do |cmd,val|
           puts "#{action} #{cmd} => #{val}"
           begin
-            case
-            when cmd.to_s == "flash"
+            case cmd.to_s
+            when "flash"
               val.times {elem.flash}
-            when cmd.to_s == "wait"
+
+            when "wait"
               br.wait_until{br.element(:xpath,xpath.to_s).exists?}
+
             else
               elem.when_present.send cmd,val
             end
@@ -129,7 +124,7 @@ module Robo
         end
       end if opts.has_key?(:xpath)
 
-      # element data
+      # process element
       opts[:elem].each do |elem,cmds|
         path = cmds.shift
         cmd  = cmds.shift
